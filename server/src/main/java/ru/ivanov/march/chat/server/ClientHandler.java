@@ -10,6 +10,11 @@ public class ClientHandler {
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
+
+    public String getUserName() {
+        return userName;
+    }
+
     private String userName;
 
     private static int usersCounter = 0;
@@ -35,6 +40,10 @@ public class ClientHandler {
                             disconnect();
                             break;
                         }
+                        if (msg.startsWith("/w")) {
+                            String[] words = msg.split(" ");
+                            server.directMessage(buildMessage(words), this, words[1]);
+                        }
                         continue;
                     }
                     server.broadcastMessage(userName + ": " + msg);
@@ -45,6 +54,14 @@ public class ClientHandler {
                 disconnect();
             }
         }).start();
+    }
+
+    private String buildMessage(String[] str) {
+        String outString = "";
+        for (int i = 2; i < str.length; i++) {
+            outString += str[i] + " ";
+        }
+        return outString;
     }
 
     public void sendMessage(String msg) {
