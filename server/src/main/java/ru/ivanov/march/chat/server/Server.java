@@ -40,4 +40,25 @@ public class Server {
             c.sendMessage(message);
         }
     }
+
+    public ClientHandler findByName(String name){
+        ClientHandler result = null;
+        for (ClientHandler c : clients) {
+            if (c.getUserName().equals(name)){
+                result = c;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public void directMessage(String message, ClientHandler sender, String recipientName) {
+        ClientHandler recipient = findByName(recipientName);
+        if (clients.contains(recipient)){
+            recipient.sendMessage("From " + sender.getUserName() + ": " + message);
+        } else {
+            sender.sendMessage("Вы пробовали отправить сообщение несуществующему пользователю");
+        }
+    }
+
 }
