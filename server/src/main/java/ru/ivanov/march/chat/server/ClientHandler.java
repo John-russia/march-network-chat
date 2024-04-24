@@ -24,24 +24,38 @@ public class ClientHandler {
         new Thread(() -> {
             try {
                 System.out.println("Подключился клиент");
-                if (tryToAuthenticate()){
+                if (tryToAuthenticate()) {
                     communicate();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
+                System.out.println("и ещё раз");
                 disconnect();
             }
         }).start();
     }
 
     private void communicate() throws IOException {
-        System.out.println("начало коммуникации");
         while (true) {
             String msg = in.readUTF();
             if (msg.startsWith("/")) {
                 if (msg.startsWith("/exit")) {
                     break;
+                }
+                if (msg.startsWith("/kick ")) {
+                    String[] tokens = msg.split(" ");
+                    if (tokens.length != 2) {
+                        sendMessage("Некорректный формат запроса, формат команды: /kick username");
+                        continue;
+                    }
+                    String nickname = tokens[1];
+                    if (!server.isNickNameBusy(nickname)) {
+                        sendMessage("Пользователь с указанным логином не онлайн");
+                        continue;
+                    } else {
+                        server.kickUser(nickname);
+                    }
                 }
                 continue;
             }
@@ -50,46 +64,46 @@ public class ClientHandler {
     }
 
     private boolean tryToAuthenticate() throws IOException {
-        while (true){
+        while (true) {
             String msg = in.readUTF();
-            if (msg.startsWith("/auth ")){
+            if (msg.startsWith("/auth ")) {
                 String[] tokens = msg.split(" ");
-                if (tokens.length != 3){
+                if (tokens.length != 3) {
                     sendMessage("Некорректный формат запроса");
                 }
                 String login = tokens[1];
                 String password = tokens[2];
 
-                String nickName = server.getAuthentificationService().getNickNameByLoginAndPassword(login, password);
-                if (nickName == null) {
+                String nickname = server.getAuthentificationService().getNickNameByLoginAndPassword(login, password);
+                if (nickname == null) {
                     sendMessage("Неправильный логин/пароль");
                     continue;
                 }
-                if (server.isNickNameBusy(nickName)){
+                if (server.isNickNameBusy(nickname)) {
                     sendMessage("Указанная учётка занята, попробуйте позднее");
                     continue;
                 }
-                this.nickname = nickName;
+                this.nickname = nickname;
                 server.subscribe(this);
-                sendMessage("Вы успешно авторизовались, nickname: " + nickName);
+                sendMessage("Вы успешно авторизовались, nickname: " + nickname);
                 return true;
             } else if (msg.startsWith("/register ")) {
                 String[] tokens = msg.split(" ");
-                if (tokens.length != 4){
+                if (tokens.length != 4) {
                     sendMessage("Некорректный формат запроса");
                 }
                 String login = tokens[1];
                 String password = tokens[2];
                 String nickname = tokens[3];
-                if (server.getAuthentificationService().isLoginAlreadyExists(login)){
+                if (server.getAuthentificationService().isLoginAlreadyExists(login)) {
                     sendMessage("Указанный логин уже занят");
                     continue;
                 }
-                if (server.getAuthentificationService().isNickNameAlreadyExists(nickname)){
+                if (server.getAuthentificationService().isNickNameAlreadyExists(nickname)) {
                     sendMessage("Указанный nickname уже занят");
                     continue;
                 }
-                if (!server.getAuthentificationService().register(login, nickname, password)){
+                if (!server.getAuthentificationService().register(login, nickname, password)) {
                     sendMessage("Не удалось зарегистрироваться");
                     continue;
                 }
