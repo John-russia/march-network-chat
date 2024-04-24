@@ -10,13 +10,10 @@ public class ClientHandler {
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
-    private String userName;
+    private String nickname;
 
-    private static int usersCounter = 0;
-
-    private void generateUserName() {
-        usersCounter++;
-        this.userName = "user" + usersCounter;
+    public String getNickname() {
+        return nickname;
     }
 
     public ClientHandler(Server server, Socket socket) throws IOException {
@@ -24,20 +21,11 @@ public class ClientHandler {
         this.server = server;
         this.in = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
-        this.generateUserName();
         new Thread(() -> {
             try {
                 System.out.println("Подключился клиент");
-                while (true) {
-                    String msg = in.readUTF();
-                    if (msg.startsWith("/")) {
-                        if (msg.startsWith("/exit")) {
-                            disconnect();
-                            break;
-                        }
-                        continue;
-                    }
-                    server.broadcastMessage(userName + ": " + msg);
+                if (tryToAuthenticate()){
+                    communicate();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -45,6 +33,76 @@ public class ClientHandler {
                 disconnect();
             }
         }).start();
+    }
+
+    private void communicate() throws IOException {
+        System.out.println("начало коммуникации");
+        while (true) {
+            String msg = in.readUTF();
+            if (msg.startsWith("/")) {
+                if (msg.startsWith("/exit")) {
+                    break;
+                }
+                continue;
+            }
+            server.broadcastMessage(nickname + ": " + msg);
+        }
+    }
+
+    private boolean tryToAuthenticate() throws IOException {
+        while (true){
+            String msg = in.readUTF();
+            if (msg.startsWith("/auth ")){
+                String[] tokens = msg.split(" ");
+                if (tokens.length != 3){
+                    sendMessage("Некорректный формат запроса");
+                }
+                String login = tokens[1];
+                String password = tokens[2];
+
+                String nickName = server.getAuthentificationService().getNickNameByLoginAndPassword(login, password);
+                if (nickName == null) {
+                    sendMessage("Неправильный логин/пароль");
+                    continue;
+                }
+                if (server.isNickNameBusy(nickName)){
+                    sendMessage("Указанная учётка занята, попробуйте позднее");
+                    continue;
+                }
+                this.nickname = nickName;
+                server.subscribe(this);
+                sendMessage("Вы успешно авторизовались, nickname: " + nickName);
+                return true;
+            } else if (msg.startsWith("/register ")) {
+                String[] tokens = msg.split(" ");
+                if (tokens.length != 4){
+                    sendMessage("Некорректный формат запроса");
+                }
+                String login = tokens[1];
+                String password = tokens[2];
+                String nickname = tokens[3];
+                if (server.getAuthentificationService().isLoginAlreadyExists(login)){
+                    sendMessage("Указанный логин уже занят");
+                    continue;
+                }
+                if (server.getAuthentificationService().isNickNameAlreadyExists(nickname)){
+                    sendMessage("Указанный nickname уже занят");
+                    continue;
+                }
+                if (!server.getAuthentificationService().register(login, nickname, password)){
+                    sendMessage("Не удалось зарегистрироваться");
+                    continue;
+                }
+                this.nickname = nickname;
+                server.subscribe(this);
+                sendMessage("Вы успешно зарегистрировались, nickname: " + nickname + ". Добро пожаловать!");
+                return true;
+            } else if (msg.equals("/exit")) {
+                return false;
+            } else {
+                sendMessage("Необходимо авторизоваться (/auth login password) или зарегистрироваться (/register login password nickname)");
+            }
+        }
     }
 
     public void sendMessage(String msg) {
