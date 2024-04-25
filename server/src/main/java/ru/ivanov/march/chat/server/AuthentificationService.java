@@ -8,4 +8,5 @@ public interface AuthentificationService {
     boolean isLoginAlreadyExists(String login);
 
     boolean isNickNameAlreadyExists(String nickName);
+    boolean isAdmin(String nickName);
 }

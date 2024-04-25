@@ -69,4 +69,14 @@ public class InMemoryAuthentificationService implements AuthentificationService 
         }
         return false;
     }
+
+    @Override
+    public boolean isAdmin(String nickName) {
+        for (User u : users) {
+            if (u.nickName.equals(nickName) && u.role.equals("ADMIN")) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

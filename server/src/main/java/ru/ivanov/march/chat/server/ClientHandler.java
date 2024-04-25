@@ -45,6 +45,10 @@ public class ClientHandler {
                 }
                 if (msg.startsWith("/kick ")) {
                     String[] tokens = msg.split(" ");
+                    if (!server.getAuthentificationService().isAdmin(this.nickname)){
+                        sendMessage("Вы не являетесь администратором и не можете кикнуть пользователя");
+                        continue;
+                    }
                     if (tokens.length != 2) {
                         sendMessage("Некорректный формат запроса, формат команды: /kick username");
                         continue;
