@@ -22,7 +22,7 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
-            this.authentificationService = new InMemoryAuthentificationService();
+            this.authentificationService = new InDataBaseAuthentificationService();
             System.out.println("Запущен сервис аутентификации: " + authentificationService.getClass().getSimpleName());
 
 
