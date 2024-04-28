@@ -30,7 +30,6 @@ public class ClientHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                System.out.println("и ещё раз");
                 disconnect();
             }
         }).start();
@@ -42,6 +41,11 @@ public class ClientHandler {
             if (msg.startsWith("/")) {
                 if (msg.startsWith("/exit")) {
                     break;
+                }
+                if (msg.startsWith("/w")) {
+                    String[] words = msg.split(" ");
+                    server.directMessage(buildMessage(words), this, words[1]);
+                    continue;
                 }
                 if (msg.startsWith("/kick ")) {
                     String[] tokens = msg.split(" ");
@@ -129,6 +133,14 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private String buildMessage(String[] str) {
+        String outString = "";
+        for (int i = 2; i < str.length; i++) {
+            outString += str[i] + " ";
+        }
+        return outString;
     }
 
     public void disconnect() {

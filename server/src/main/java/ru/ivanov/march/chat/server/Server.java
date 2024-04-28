@@ -52,6 +52,15 @@ public class Server {
         return result;
     }
 
+    public void directMessage(String message, ClientHandler sender, String recipientName) {
+        ClientHandler recipient = findByNick(recipientName);
+        if (clients.contains(recipient)){
+            recipient.sendMessage("From " + sender.getNickname() + ": " + message);
+        } else {
+            sender.sendMessage("Вы пробовали отправить сообщение несуществующему пользователю");
+        }
+    }
+
     public synchronized void subscribe(ClientHandler clientHandler) {
         broadcastMessage("К чату присоединился " + clientHandler.getNickname());
         clients.add(clientHandler);
