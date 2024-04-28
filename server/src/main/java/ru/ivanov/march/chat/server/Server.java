@@ -31,7 +31,7 @@ public class Server {
                 try {
                     Socket socket = serverSocket.accept();
                     new ClientHandler(this, socket);
-                }catch (Exception e){
+                } catch (Exception e) {
                     System.out.println("Возникла ошибка при обработке подключившегося клиента");
                 }
 
@@ -39,6 +39,17 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public ClientHandler findByNick(String nickname) {
+        ClientHandler result = null;
+        for (ClientHandler c : clients) {
+            if (c.getNickname().equals(nickname)) {
+                result = c;
+                break;
+            }
+        }
+        return result;
     }
 
     public synchronized void subscribe(ClientHandler clientHandler) {
@@ -51,15 +62,21 @@ public class Server {
         broadcastMessage("Из чата вышел " + clientHandler.getNickname());
     }
 
+    public void kickUser(String nickname) {
+        ClientHandler client = findByNick(nickname);
+        client.sendMessage("Вас кикнули");
+        client.disconnect();
+    }
+
     public void broadcastMessage(String message) {
         for (ClientHandler c : clients) {
             c.sendMessage(message);
         }
     }
 
-    public synchronized boolean isNickNameBusy(String nickname){
-        for (ClientHandler c : clients){
-            if (c.getNickname().equals(nickname)){
+    public synchronized boolean isNickNameBusy(String nickname) {
+        for (ClientHandler c : clients) {
+            if (c.getNickname().equals(nickname)) {
                 return true;
             }
         }
